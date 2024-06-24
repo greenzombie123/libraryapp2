@@ -1,5 +1,5 @@
-/* Book Object */
 var idCounter = 1;
+var modal = document.querySelector('dialog');
 var ReadingStatus;
 (function (ReadingStatus) {
     ReadingStatus[ReadingStatus["NotStarted"] = 0] = "NotStarted";
@@ -34,8 +34,20 @@ function renderBooks(books) {
         var bookImage = document.createElement("img");
         bookImage.className = "bookImage";
         bookImage.src = book.image || "./assets/bookcover.jpg";
+        bookImage.dataset.bookId = book.id.toString();
+        bookImage.addEventListener("click", function (e) {
+            var bookInfo = findBook(e);
+            console.log(bookInfo);
+        });
         booksContainer.appendChild(bookImage);
     });
+}
+function seeBookInfo(book) {
+}
+function findBook(e) {
+    // Turn the string dataset value to a number
+    var bookId = +e.target.dataset.bookId;
+    return books.find(function (book) { return book.id === bookId; });
 }
 function initialize() {
     renderBooks(books);

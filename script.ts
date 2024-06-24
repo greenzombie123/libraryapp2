@@ -1,5 +1,5 @@
-/* Book Object */
 let idCounter = 1
+const modal = document.querySelector('dialog')!
 
 enum ReadingStatus {
     NotStarted,
@@ -49,8 +49,23 @@ function renderBooks(books: Book[]) {
         const bookImage = document.createElement("img")
         bookImage.className = "bookImage"
         bookImage.src = book.image || "./assets/bookcover.jpg"
+        bookImage.dataset.bookId = book.id.toString()
+        bookImage.addEventListener("click", (e)=>{
+            const bookInfo = findBook(e)
+            console.log(bookInfo)
+        })
         booksContainer.appendChild(bookImage)
     })
+}
+
+function seeBookInfo(book:Book){
+
+}
+
+function findBook(e:Event){
+    // Turn the string dataset value to a number
+    const bookId = +(e.target as HTMLElement).dataset.bookId!
+    return books.find(book=>book.id === bookId)
 }
 
 function initialize(){
