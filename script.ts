@@ -46,10 +46,10 @@ function renderBooks(books: Book[]) {
     const booksContainer = document.querySelector('.booksContainer')!
 
     books.forEach(book => {
-        const image = document.createElement("div")
-        image.className = "book"
-
-        booksContainer.appendChild(image)
+        const bookImage = document.createElement("img")
+        bookImage.className = "bookImage"
+        bookImage.src = book.image || "./assets/bookcover.jpg"
+        booksContainer.appendChild(bookImage)
     })
 }
 

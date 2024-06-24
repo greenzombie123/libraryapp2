@@ -31,9 +31,10 @@ Book.prototype.setValues = function (newValues) {
 function renderBooks(books) {
     var booksContainer = document.querySelector('.booksContainer');
     books.forEach(function (book) {
-        var image = document.createElement("div");
-        image.className = "book";
-        booksContainer.appendChild(image);
+        var bookImage = document.createElement("img");
+        bookImage.className = "bookImage";
+        bookImage.src = book.image || "./assets/bookcover.jpg";
+        booksContainer.appendChild(bookImage);
     });
 }
 function initialize() {

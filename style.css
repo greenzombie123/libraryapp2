@@ -11,7 +11,12 @@ body{
 }
 
 .book{
-    background-color: blue;
-    border: 5px solid black;
-    wi
+    
+}
+
+.bookImage {
+    height: 100%;
+    width: 100%;
+    border: 1px solid black;
+    box-shadow: 3px 2px 2px 1px #888686;
 }
