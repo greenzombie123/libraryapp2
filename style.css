@@ -1,8 +1,17 @@
+body{
+    padding: 20px;
+}
+
 
 .booksContainer{
     display: grid;
-    grid-template: 150px / repeat(auto-fit, 200px);
+    grid-template: 250px / repeat(auto-fit, 200px);
     grid-auto-rows: 150px;
     gap: 50px;
 }
 
+.book{
+    background-color: blue;
+    border: 5px solid black;
+    wi
+}
