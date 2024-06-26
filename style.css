@@ -10,13 +10,52 @@ body{
     gap: 50px;
 }
 
-.book{
-    
-}
-
 .bookImage {
     height: 100%;
     width: 100%;
     border: 1px solid black;
     box-shadow: 3px 2px 2px 1px #888686;
+}
+
+.viewBookModal{
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    height: 200px;
+    width: 400px;
+
+    .titleBox{
+        font-weight: 600;
+        font-size: 20px;
+    }
+
+    .authorBox{
+
+    }
+
+    .pageBox{
+
+    }
+    
+    .statusBox{
+
+    }
+
+    .buttons{
+        margin-top: auto;
+        display: flex;
+        justify-content: space-around;
+        width: 100%;
+
+        button{
+            border-radius: 10px;
+            outline: none;
+            background-color: aqua;
+            padding: 5px 10px;
+        }
+    }
+}
+
+dialog{
+    border-radius: 5px;
 }
