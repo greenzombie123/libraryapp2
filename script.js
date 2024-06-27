@@ -1,10 +1,75 @@
 var modal = document.querySelector('dialog');
-// const viewBookModal: HTMLFormElement = createViewBookModal()
-var editBookModal = createEditBookModal();
-var viewBookModal = {
+var editBookModal = {
     modal: modal,
     form: null,
     createForm: function () {
+        var editBookModal = document.createElement('form');
+        editBookModal.method = "dialog";
+        editBookModal.className = "editBookModal";
+        var labelNames = ['Title', 'Author', 'PageNumber'];
+        for (var index = 0; index < 3; index++) {
+            var para = document.createElement('p');
+            var label = document.createElement('label');
+            label.textContent = labelNames[index];
+            label.htmlFor = labelNames[index];
+            var input = document.createElement('input');
+            input.id = labelNames[index];
+            para.appendChild(label);
+            para.appendChild(input);
+            editBookModal.appendChild(para);
+        }
+        // Create radio buttons setting reading status
+        var statusContainer = document.createElement('div');
+        statusContainer.className = "radioButtons";
+        editBookModal.appendChild(statusContainer);
+        var radioButtonLabels = ["Haven't Started", "Reading Now", "Finished"];
+        for (var index = 0; index < 3; index++) {
+            var label = document.createElement('label');
+            label.textContent = radioButtonLabels[index];
+            var radioButton = document.createElement('input');
+            radioButton.type = "radio";
+            radioButton.name = "radio";
+            var span = document.createElement('span');
+            statusContainer.appendChild(label);
+            label.appendChild(radioButton);
+            label.appendChild(span);
+        }
+        var buttons = document.createElement('div');
+        buttons.className = 'buttons';
+        var okButton = document.createElement('button');
+        okButton.textContent = "ok";
+        okButton.className = "okButton";
+        var cancelButton = document.createElement('button');
+        cancelButton.className = "cancelButton";
+        cancelButton.textContent = "Cancel";
+        buttons.appendChild(okButton);
+        buttons.appendChild(cancelButton);
+        editBookModal.appendChild(buttons);
+        return editBookModal;
+    },
+    openEditBookModal: function (book) {
+        var _a;
+        if (this.modal.hasChildNodes()) {
+            (_a = this.modal.firstChild) === null || _a === void 0 ? void 0 : _a.replaceWith(this.form);
+        }
+        else
+            modal.appendChild(this.form);
+        this.form.querySelector("#Title").value = book.title;
+        this.form.querySelector("#Author").value = book.author;
+        this.form.querySelector("#PageNumber").value = book.pageNum;
+        // this.form.querySelector("#Status").
+        modal.showModal();
+    }
+};
+var viewBookModal = {
+    modal: modal,
+    form: null,
+    currentBook: null,
+    setCurrentBook: function (book) {
+        this.currentBook = book;
+    },
+    createForm: function () {
+        var _this = this;
         var viewBookModal = document.createElement('form');
         viewBookModal.method = "dialog";
         viewBookModal.className = "viewBookModal";
@@ -20,7 +85,7 @@ var viewBookModal = {
         var editButton = document.createElement('button');
         editButton.className = "editButton";
         editButton.textContent = "Edit";
-        editButton.addEventListener("click", function () { return openEditBookModal(editBookModal, modal); });
+        editButton.addEventListener("click", function () { return editBookModal.openEditBookModal(_this.currentBook); });
         var cancelButton = document.createElement('button');
         cancelButton.className = "cancelButton";
         cancelButton.textContent = "Cancel";
@@ -36,10 +101,11 @@ var viewBookModal = {
         }
         else
             modal.appendChild(this.form);
-        this.form.children[0].textContent = book.title;
-        this.form.children[1].textContent = 'Author: ' + book.author;
-        this.form.children[2].textContent = "".concat(book.pageNum, " pages");
-        this.form.children[3].textContent = 'Status: ' + (book.status === ReadingStatus.NotStarted ? "Haven't read yet" : book.status === ReadingStatus.Reading ? "Reading Now" : "Finished");
+        this.setCurrentBook(book);
+        this.form.children[0].textContent = this.currentBook.title;
+        this.form.children[1].textContent = 'Author: ' + this.currentBook.author;
+        this.form.children[2].textContent = "".concat(this.currentBook.pageNum, " pages");
+        this.form.children[3].textContent = 'Status: ' + (this.currentBook.status === ReadingStatus.NotStarted ? "Haven't read yet" : this.currentBook.status === ReadingStatus.Reading ? "Reading Now" : "Finished");
         modal.showModal();
     }
 };
@@ -115,8 +181,9 @@ function renderBooks(books, viewBookModal) {
         bookImage.src = book.image || "./assets/bookcover.jpg";
         bookImage.dataset.bookId = book.id.toString();
         bookImage.addEventListener("click", function (e) {
+            var _a;
             var bookInfo = findBook(e);
-            viewBookModal.seeBookInfo(bookInfo);
+            (_a = viewBookModal.seeBookInfo) === null || _a === void 0 ? void 0 : _a.call(viewBookModal, bookInfo);
         });
         booksContainer.appendChild(bookImage);
     });
@@ -145,6 +212,7 @@ function findBook(e) {
 function initialize() {
     modal.addEventListener("click", cancelModalOutside);
     viewBookModal.form = viewBookModal.createForm();
+    editBookModal.form = editBookModal.createForm();
     renderBooks(books, viewBookModal);
 }
 initialize();

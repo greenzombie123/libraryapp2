@@ -1,9 +1,9 @@
-body{
+body {
     padding: 20px;
 }
 
 
-.booksContainer{
+.booksContainer {
     display: grid;
     grid-template: 250px / repeat(auto-fit, 200px);
     grid-auto-rows: 150px;
@@ -17,37 +17,31 @@ body{
     box-shadow: 3px 2px 2px 1px #888686;
 }
 
-.viewBookModal{
+.viewBookModal {
     display: flex;
     flex-direction: column;
     gap: 5px;
     height: 200px;
     width: 400px;
 
-    .titleBox{
+    .titleBox {
         font-weight: 600;
         font-size: 20px;
     }
 
-    .authorBox{
+    .authorBox {}
 
-    }
+    .pageBox {}
 
-    .pageBox{
+    .statusBox {}
 
-    }
-    
-    .statusBox{
-
-    }
-
-    .buttons{
+    .buttons {
         margin-top: auto;
         display: flex;
         justify-content: space-around;
         width: 100%;
 
-        button{
+        button {
             border-radius: 10px;
             outline: none;
             background-color: aqua;
@@ -56,6 +50,86 @@ body{
     }
 }
 
-dialog{
+.editBookModal {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    /* height: 200px; */
+    width: 400px;
+
+    p {
+        label {}
+
+        input {}
+    }
+
+    .radioButtons {
+        label {
+            display: block;
+            position: relative;
+            padding-left: 35px;
+            margin-bottom: 12px;
+            cursor: pointer;
+            font-size: 22px;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+
+            input[type="radio"] {
+                position: absolute;
+                opacity: 0;
+                cursor: pointer;
+
+                &:checked~span {
+                    background-color: #2196F3;
+                }
+
+                &:checked~span:after {
+                    display: block;
+                }
+            }
+
+            span {
+                position: absolute;
+                top: 0;
+                left: 0;
+                height: 25px;
+                width: 25px;
+                background-color: #eee;
+                border-radius: 50%;
+
+                &:after {
+                    content: "";
+                    position: absolute;
+                    display: none;
+
+                    top: 9px;
+                    left: 9px;
+                    width: 8px;
+                    height: 8px;
+                    border-radius: 50%;
+                    background: white;
+                }
+            }
+        }
+    }
+
+    .buttons {
+        margin-top: auto;
+        display: flex;
+        justify-content: space-around;
+        width: 100%;
+
+        button {
+            border-radius: 10px;
+            outline: none;
+            background-color: aqua;
+            padding: 5px 10px;
+        }
+    }
+}
+
+dialog {
     border-radius: 5px;
 }
