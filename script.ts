@@ -9,42 +9,84 @@ interface IDCounter {
 interface ViewBookModal {
     modal: HTMLDialogElement,
     form: HTMLFormElement | null,
-    currentBook?:Book | null,
-    setCurrentBook?:(book:Book)=>void,
+    currentBook?: Book | null,
+    setCurrentBook?: (book: Book) => void,
     createForm: () => HTMLFormElement,
     seeBookInfo?: (book: Book) => void
 }
 
 interface EditBookModal extends ViewBookModal {
-    openEditBookModal: (book: Book) => void
+    inputData: Book | null,
+    openEditBookModal: (book: Book) => void,
+    changeBooks: (book: Book, books: Book[]) => Book[],
+    setBooks: (newBooks: Book[], books: Books) => void,
+    getInputData: () => Book
 }
 
 const editBookModal: EditBookModal = {
     modal: modal,
     form: null,
+    inputData: null,
+    changeBooks(updatedBook: Book, books: Book[]) {
+        return books.map(book => {
+            if (book.id === updatedBook.id) {
+                return updatedBook
+            }
+            else
+                return book
+        })
+    },
+    setBooks(newBooks: Book[], books: Books) {
+        books.setBooks(newBooks)
+    },
+    getInputData() {
+        const title: string = this.form.querySelector("#Title").value
+        const author: string = this.form.querySelector("#Author").value
+        const pageNum: number = Number(this.form.querySelector("#PageNumber").value)
+        const radioButtons: HTMLInputElement[] = Array.from(this.form.querySelectorAll(".radioButtons label input"))
+        const id: number = Number(this.form.dataset.bookId)
+        const image: string | null = null
+        let status: ReadingStatus;
+
+        if (radioButtons[0].checked) {
+            status = ReadingStatus.NotStarted
+        }
+        else if (radioButtons[1].checked) {
+            status = ReadingStatus.Reading
+        }
+        else
+            status = ReadingStatus.Finished
+
+        return { title, author, pageNum, status, id, image }
+    },
     createForm() {
         const editBookModal = document.createElement('form')
         editBookModal.method = "dialog"
         editBookModal.className = "editBookModal"
         const labelNames: string[] = ['Title', 'Author', 'PageNumber']
-    
+
         for (let index = 0; index < 3; index++) {
             const para = document.createElement('p')
             const label = document.createElement('label')
             label.textContent = labelNames[index];
             label.htmlFor = labelNames[index];
-            const input = document.createElement('input')
+            let input
+            if (index === 2) {
+                input = document.createElement('input')
+                input.type = "number"
+            }
+            else input = document.createElement('input')
             input.id = labelNames[index]
-    
+
             para.appendChild(label)
             para.appendChild(input)
             editBookModal.appendChild(para)
         }
 
         // Create radio buttons setting reading status
-        const statusContainer = document.createElement('div')
-        statusContainer.className = "radioButtons"
-        editBookModal.appendChild(statusContainer)
+        const radioButtons = document.createElement('div')
+        radioButtons.className = "radioButtons"
+        editBookModal.appendChild(radioButtons)
         const radioButtonLabels = ["Haven't Started", "Reading Now", "Finished"]
 
         for (let index = 0; index < 3; index++) {
@@ -54,39 +96,54 @@ const editBookModal: EditBookModal = {
             radioButton.type = "radio";
             radioButton.name = "radio"
             const span = document.createElement('span')
-    
-            statusContainer.appendChild(label)
+
+            radioButtons.appendChild(label)
             label.appendChild(radioButton)
             label.appendChild(span)
         }
-    
+
         const buttons = document.createElement('div')
         buttons.className = 'buttons'
-    
+
         const okButton = document.createElement('button')
         okButton.textContent = "ok"
         okButton.className = "okButton"
         const cancelButton = document.createElement('button')
         cancelButton.className = "cancelButton"
         cancelButton.textContent = "Cancel"
-    
+
         buttons.appendChild(okButton)
         buttons.appendChild(cancelButton)
         editBookModal.appendChild(buttons)
-    
+
         return editBookModal
     },
-    openEditBookModal(book:Book){
+    openEditBookModal(book: Book) {
         if (this.modal.hasChildNodes()) {
             this.modal.firstChild?.replaceWith(this.form)
         }
         else
             modal.appendChild(this.form)
 
+        this.form.dataset.bookId = book.id
         this.form.querySelector("#Title").value = book.title
         this.form.querySelector("#Author").value = book.author
         this.form.querySelector("#PageNumber").value = book.pageNum
-        // this.form.querySelector("#Status").
+        this.form.querySelector("button").addEventListener("click", () => {
+            const inputData = this.getInputData()
+            const newBooks = this.changeBooks(inputData, books.books)
+            books.setBooks(newBooks)
+        })
+
+        const radioButtons: HTMLInputElement[] = Array.from(this.form.querySelectorAll(".radioButtons label input"))
+        if (book.status === ReadingStatus.NotStarted) {
+            radioButtons[0].checked = true
+        }
+        else if (book.status === ReadingStatus.Reading) {
+            radioButtons[1].checked = true
+        }
+        else
+            radioButtons[2].checked = true
         modal.showModal()
     }
 }
@@ -95,7 +152,7 @@ const viewBookModal: ViewBookModal = {
     modal: modal,
     form: null,
     currentBook: null,
-    setCurrentBook(book:Book){
+    setCurrentBook(book: Book) {
         this.currentBook = book
     },
     createForm() {
@@ -130,7 +187,7 @@ const viewBookModal: ViewBookModal = {
         return viewBookModal
     },
 
-    seeBookInfo(book:Book) {
+    seeBookInfo(book: Book) {
         if (this.modal.hasChildNodes()) {
             this.modal.firstChild?.replaceWith(this.form)
         }
@@ -174,10 +231,20 @@ interface Book {
     id: number
 }
 
-const books: Book[] = [
-    { title: "We are light of the world!", pageNum: 12, author: "Brian Lop", image: null, status: ReadingStatus.Finished, id: idCounter.assignIdCounter() },
-    { title: "Star and Spills", pageNum: 122, author: "Jeff Loppy", image: null, status: ReadingStatus.NotStarted, id: idCounter.assignIdCounter() }
-]
+interface Books {
+    books: Book[],
+    setBooks: (books: Book[]) => void
+}
+
+const books: Books = {
+    books: [
+        { title: "We are light of the world!", pageNum: 12, author: "Brian Lop", image: null, status: ReadingStatus.Finished, id: idCounter.assignIdCounter() },
+        { title: "Star and Spills", pageNum: 122, author: "Jeff Loppy", image: null, status: ReadingStatus.NotStarted, id: idCounter.assignIdCounter() }
+    ],
+    setBooks(books: Book[]) {
+        this.books = books
+    }
+}
 
 function Book(title: string, pageNum: number, author: string, image: string | null, status: ReadingStatus) {
     this.title = title
@@ -188,13 +255,13 @@ function Book(title: string, pageNum: number, author: string, image: string | nu
     this.id = idCounter.assignIdCounter()
 }
 
-Book.prototype.setValues = function (newValues: Book) {
-    this.title = newValues.title
-    this.pageNum = newValues.pageNum
-    this.author = newValues.author
-    this.image = newValues.image
-    this.status = newValues.status
-}
+// Book.prototype.setValues = function (newValues: Book) {
+//     this.title = newValues.title
+//     this.pageNum = newValues.pageNum
+//     this.author = newValues.author
+//     this.image = newValues.image
+//     this.status = newValues.status
+// }
 
 
 function createEditBookModal() {
@@ -221,7 +288,7 @@ function createEditBookModal() {
     buttons.className = 'buttons'
 
     const okButton = document.createElement('button')
-    okButton.textContent = "ok"
+    okButton.textContent = "Ok"
     okButton.className = "okButton"
     const cancelButton = document.createElement('button')
     cancelButton.className = "cancelButton"
@@ -272,7 +339,7 @@ function fillEditBookModal() {
 function findBook(e: Event) {
     // Turn the string dataset value to a number
     const bookId = +(e.target as HTMLElement).dataset.bookId!
-    return books.find(book => book.id === bookId)
+    return books.books.find(book => book.id === bookId)
 }
 
 function initialize() {
@@ -281,7 +348,7 @@ function initialize() {
     viewBookModal.form = viewBookModal.createForm()
     editBookModal.form = editBookModal.createForm()
 
-    renderBooks(books, viewBookModal)
+    renderBooks(books.books, viewBookModal)
 }
 
 initialize()
