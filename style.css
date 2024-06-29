@@ -17,11 +17,11 @@ body {
     box-shadow: 3px 2px 2px 1px #888686;
 }
 
-.viewBookModal {
+form {
     display: flex;
     flex-direction: column;
     gap: 5px;
-    height: 200px;
+    /* height: 200px; */
     width: 400px;
 
     .titleBox {
@@ -48,14 +48,6 @@ body {
             padding: 5px 10px;
         }
     }
-}
-
-.editBookModal {
-    display: flex;
-    flex-direction: column;
-    gap: 5px;
-    width: 500px;
-    gap: 10px;
 
     p {
         display: flex;
@@ -121,7 +113,32 @@ body {
         }
     }
 
-    .buttons {
+    .filePickerLabel{
+        font-size: 20px;
+        color: rgb(1, 145, 145);
+        margin: 10px 0;
+        cursor: pointer;
+        width: fit-content;
+
+        &:hover{
+            color: black;
+        }
+
+        &::after{
+            display: block;
+            margin-top: 5px;
+            font-size: 14px;
+            text-decoration: underline;
+            content: attr(data-image-name);
+            color: blue;
+        }
+
+        input{
+            display: none;
+        }
+    }
+
+    /* .buttons {
         margin-top: auto;
         display: flex;
         justify-content: space-around;
@@ -133,7 +150,17 @@ body {
             background-color: aqua;
             padding: 5px 10px;
         }
-    }
+    } */
+}
+
+.editBookModal {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    width: 500px;
+    gap: 10px;
+
+    
 }
 
 dialog {

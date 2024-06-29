@@ -1,4 +1,17 @@
 const modal = document.querySelector('dialog')!
+modal.addEventListener("close", ()=>{
+    addBookModal.eraseInput()
+})
+
+interface BookManager {
+    books: Book[],
+    currentBook: Book | null,
+    setBooks: (books: Book[]) => void,
+    updateBooks: (newBook: Book) => Book[],
+    findBook: (event: Event) => Book,
+    setCurrentBook: (book: Book) => void,
+    getCurrentBook: () => Book
+}
 
 interface IDCounter {
     idNumber: number,
@@ -6,203 +19,163 @@ interface IDCounter {
     incrementIdCounter: () => void
 }
 
-interface ViewBookModal {
+interface Modal {
     modal: HTMLDialogElement,
-    form: HTMLFormElement | null,
-    currentBook?: Book | null,
-    setCurrentBook?: (book: Book) => void,
-    createForm: () => HTMLFormElement,
-    seeBookInfo?: (book: Book) => void
+    form: HTMLFormElement,
 }
 
-interface EditBookModal extends ViewBookModal {
+interface ViewBookModal extends Modal {
+    modal: HTMLDialogElement,
+    form: HTMLFormElement,
+    seeBookInfo: (book: Book) => void
+}
+
+interface EditBookModal extends Modal {
     inputData: Book | null,
-    openEditBookModal: (book: Book) => void,
-    changeBooks: (book: Book, books: Book[]) => Book[],
-    setBooks: (newBooks: Book[], books: Books) => void,
+    openEditBookModal?: (book: Book) => void,
+    changeBooks?: (book: Book, books: Book[]) => Book[],
+    setBooks?: (newBooks: Book[], books: Books) => void,
     getInputData: () => Book
 }
 
-const editBookModal: EditBookModal = {
-    modal: modal,
-    form: null,
-    inputData: null,
-    changeBooks(updatedBook: Book, books: Book[]) {
-        return books.map(book => {
-            if (book.id === updatedBook.id) {
-                return updatedBook
-            }
-            else
-                return book
-        })
-    },
-    setBooks(newBooks: Book[], books: Books) {
-        books.setBooks(newBooks)
-    },
-    getInputData() {
-        const title: string = this.form.querySelector("#Title").value
-        const author: string = this.form.querySelector("#Author").value
-        const pageNum: number = Number(this.form.querySelector("#PageNumber").value)
-        const radioButtons: HTMLInputElement[] = Array.from(this.form.querySelectorAll(".radioButtons label input"))
-        const id: number = Number(this.form.dataset.bookId)
-        const image: string | null = null
-        let status: ReadingStatus;
-
-        if (radioButtons[0].checked) {
-            status = ReadingStatus.NotStarted
-        }
-        else if (radioButtons[1].checked) {
-            status = ReadingStatus.Reading
-        }
-        else
-            status = ReadingStatus.Finished
-
-        return { title, author, pageNum, status, id, image }
-    },
-    createForm() {
-        const editBookModal = document.createElement('form')
-        editBookModal.method = "dialog"
-        editBookModal.className = "editBookModal"
-        const labelNames: string[] = ['Title', 'Author', 'PageNumber']
-
-        for (let index = 0; index < 3; index++) {
-            const para = document.createElement('p')
-            const label = document.createElement('label')
-            label.textContent = labelNames[index];
-            label.htmlFor = labelNames[index];
-            let input
-            if (index === 2) {
-                input = document.createElement('input')
-                input.type = "number"
-            }
-            else input = document.createElement('input')
-            input.id = labelNames[index]
-
-            para.appendChild(label)
-            para.appendChild(input)
-            editBookModal.appendChild(para)
-        }
-
-        // Create radio buttons setting reading status
-        const radioButtons = document.createElement('div')
-        radioButtons.className = "radioButtons"
-        editBookModal.appendChild(radioButtons)
-        const radioButtonLabels = ["Haven't Started", "Reading Now", "Finished"]
-
-        for (let index = 0; index < 3; index++) {
-            const label = document.createElement('label')
-            label.textContent = radioButtonLabels[index]
-            const radioButton = document.createElement('input')
-            radioButton.type = "radio";
-            radioButton.name = "radio"
-            const span = document.createElement('span')
-
-            radioButtons.appendChild(label)
-            label.appendChild(radioButton)
-            label.appendChild(span)
-        }
-
-        const buttons = document.createElement('div')
-        buttons.className = 'buttons'
-
-        const okButton = document.createElement('button')
-        okButton.textContent = "ok"
-        okButton.className = "okButton"
-        const cancelButton = document.createElement('button')
-        cancelButton.className = "cancelButton"
-        cancelButton.textContent = "Cancel"
-
-        buttons.appendChild(okButton)
-        buttons.appendChild(cancelButton)
-        editBookModal.appendChild(buttons)
-
-        return editBookModal
-    },
-    openEditBookModal(book: Book) {
-        if (this.modal.hasChildNodes()) {
-            this.modal.firstChild?.replaceWith(this.form)
-        }
-        else
-            modal.appendChild(this.form)
-
-        this.form.dataset.bookId = book.id
-        this.form.querySelector("#Title").value = book.title
-        this.form.querySelector("#Author").value = book.author
-        this.form.querySelector("#PageNumber").value = book.pageNum
-        this.form.querySelector("button").addEventListener("click", () => {
-            const inputData = this.getInputData()
-            const newBooks = this.changeBooks(inputData, books.books)
-            books.setBooks(newBooks)
-        })
-
-        const radioButtons: HTMLInputElement[] = Array.from(this.form.querySelectorAll(".radioButtons label input"))
-        if (book.status === ReadingStatus.NotStarted) {
-            radioButtons[0].checked = true
-        }
-        else if (book.status === ReadingStatus.Reading) {
-            radioButtons[1].checked = true
-        }
-        else
-            radioButtons[2].checked = true
-        modal.showModal()
-    }
+interface AddBookModal extends Modal {
+    openAddBookModal: () => void,
+    getInput: () => Book,
+    eraseInput:()=>void
 }
 
-const viewBookModal: ViewBookModal = {
-    modal: modal,
-    form: null,
-    currentBook: null,
-    setCurrentBook(book: Book) {
-        this.currentBook = book
-    },
-    createForm() {
+enum ReadingStatus {
+    NotStarted,
+    Reading,
+    Finished
+}
 
-        const viewBookModal = document.createElement('form')
-        viewBookModal.method = "dialog"
-        viewBookModal.className = "viewBookModal"
-        const boxes: HTMLParagraphElement[] = []
-        const classNames: string[] = ['titleBox', 'authorBox', 'pageBox', 'statusBox']
+interface Book {
+    title: string;
+    pageNum: number;
+    author: string;
+    image: File | null;
+    status: ReadingStatus;
+    id: number
+}
 
-        for (let index = 0; index < 4; index++) {
-            boxes.push(document.createElement('p'))
-            boxes[index].className = classNames[index]
-            viewBookModal.appendChild(boxes[index])
+const DialogForm = () => {
+    const dialogForm = document.createElement('form')
+    dialogForm.method = "dialog"
+
+    return dialogForm
+}
+
+const InputSection = () => {
+    const fragment = new DocumentFragment()
+    const labelNames: string[] = ['Title', 'Author', 'PageNumber']
+
+    for (let index = 0; index < 3; index++) {
+        const para = document.createElement('p')
+        const label = document.createElement('label')
+        label.textContent = labelNames[index];
+        label.htmlFor = labelNames[index];
+        let input
+        if (index === 2) {
+            input = document.createElement('input')
+            input.type = "number"
         }
+        else input = document.createElement('input')
+        input.id = labelNames[index]
 
-        const buttons = document.createElement('div')
-        buttons.className = 'buttons'
-
-        const editButton = document.createElement('button')
-        editButton.className = "editButton"
-        editButton.textContent = "Edit"
-        editButton.addEventListener("click", () => editBookModal.openEditBookModal(this.currentBook))
-        const cancelButton = document.createElement('button')
-        cancelButton.className = "cancelButton"
-        cancelButton.textContent = "Cancel"
-
-        buttons.appendChild(editButton)
-        buttons.appendChild(cancelButton)
-        viewBookModal.appendChild(buttons)
-
-        return viewBookModal
-    },
-
-    seeBookInfo(book: Book) {
-        if (this.modal.hasChildNodes()) {
-            this.modal.firstChild?.replaceWith(this.form)
-        }
-        else
-            modal.appendChild(this.form)
-
-        this.setCurrentBook(book)
-
-        this.form.children[0].textContent = this.currentBook.title
-        this.form.children[1].textContent = 'Author: ' + this.currentBook.author
-        this.form.children[2].textContent = `${this.currentBook.pageNum} pages`
-        this.form.children[3].textContent = 'Status: ' + (this.currentBook.status === ReadingStatus.NotStarted ? "Haven't read yet" : this.currentBook.status === ReadingStatus.Reading ? "Reading Now" : "Finished")
-
-        modal.showModal()
+        para.appendChild(label)
+        para.appendChild(input)
+        fragment.appendChild(para)
     }
+    return fragment
+}
+
+const RadioButtons = () => {
+    // Create radio buttons setting reading status
+    const radioButtons = document.createElement('div')
+    radioButtons.className = "radioButtons"
+    const radioButtonLabels = ["Haven't Started", "Reading Now", "Finished"]
+
+    for (let index = 0; index < 3; index++) {
+        const label = document.createElement('label')
+        label.textContent = radioButtonLabels[index]
+        const radioButton = document.createElement('input')
+        radioButton.type = "radio";
+        radioButton.name = "radio"
+        const span = document.createElement('span')
+
+        radioButtons.appendChild(label)
+        label.appendChild(radioButton)
+        label.appendChild(span)
+    }
+
+    return radioButtons
+}
+
+const BookInfoSection = () => {
+    const fragment = new DocumentFragment()
+    const classNames: string[] = ['titleBox', 'authorBox', 'pageBox', 'statusBox']
+
+    for (let index = 0; index < 4; index++) {
+        const p = document.createElement('p')
+        p.className = classNames[index]
+        fragment.append(p)
+    }
+
+    return fragment
+}
+
+const Buttons = (firstName: string, secondName: string, callBack: EventListener | null = null) => {
+    const buttons = document.createElement('div')
+    buttons.className = 'buttons'
+
+    const firstButton = document.createElement('button')
+    firstButton.textContent = firstName
+    if (callBack) firstButton.addEventListener('click', callBack)
+    const secondButton = document.createElement('button')
+    secondButton.textContent = secondName
+    buttons.appendChild(firstButton)
+    buttons.appendChild(secondButton)
+
+    return buttons
+}
+
+const FilePicker = () => {
+    const filePicker = document.createElement("input")
+    filePicker.type = "file"
+
+    const filePickerLabel = document.createElement("label")
+    filePickerLabel.textContent = "Upload an Image"
+    filePickerLabel.appendChild(filePicker)
+    filePickerLabel.className = "filePickerLabel"
+
+    filePicker.addEventListener("change", (e) => {
+        const imageName = (e.currentTarget! as HTMLInputElement).files![0].name
+        filePickerLabel.dataset.imageName = imageName
+    })
+
+    return filePickerLabel
+}
+
+const ViewBookModal = () => {
+    const dialogForm = DialogForm()
+    dialogForm.appendChild(BookInfoSection())
+    dialogForm.appendChild(Buttons("Edit", "Cancel"))
+    return dialogForm
+}
+
+const InputBookModal = () => {
+    const dialogForm = DialogForm()
+    dialogForm.appendChild(InputSection())
+    dialogForm.appendChild(FilePicker())
+    dialogForm.appendChild(RadioButtons())
+    dialogForm.appendChild(Buttons("Finish", "Cancel", () => {
+        const book = addBookModal.getInput()
+        const books = bookManager.updateBooks(book)
+        bookManager.setBooks(books)
+        renderBooks(bookManager.books, viewBookModal)
+    }))
+    return dialogForm
 }
 
 const idCounter: IDCounter = {
@@ -216,33 +189,217 @@ const idCounter: IDCounter = {
     }
 }
 
-enum ReadingStatus {
-    NotStarted,
-    Reading,
-    Finished
-}
-
-interface Book {
-    title: string;
-    pageNum: number;
-    author: string;
-    image: string | null;
-    status: ReadingStatus;
-    id: number
-}
-
-interface Books {
-    books: Book[],
-    setBooks: (books: Book[]) => void
-}
-
-const books: Books = {
+const bookManager: BookManager = {
     books: [
         { title: "We are light of the world!", pageNum: 12, author: "Brian Lop", image: null, status: ReadingStatus.Finished, id: idCounter.assignIdCounter() },
         { title: "Star and Spills", pageNum: 122, author: "Jeff Loppy", image: null, status: ReadingStatus.NotStarted, id: idCounter.assignIdCounter() }
     ],
+    currentBook: null,
     setBooks(books: Book[]) {
-        this.books = books
+        this.books = [...books]
+    },
+    updateBooks(newBook: Book) {
+        return [...this.books, newBook]
+    },
+    findBook(e: Event) {
+        // Turn the string dataset value to a number
+        const bookId = +(e.target as HTMLElement).dataset.bookId!
+        return this.books.find(book => book.id === bookId)
+    },
+    setCurrentBook(book: Book) {
+        this.currentBook = book
+    },
+    getCurrentBook() {
+        return this.currentBook
+    },
+}
+
+const addBookModal: AddBookModal = {
+    modal: modal,
+    form: InputBookModal(),
+    getInput() {
+        const title: string = this.form.querySelector("#Title").value
+        const author: string = this.form.querySelector("#Author").value
+        const pageNum: number = Number(this.form.querySelector("#PageNumber").value)
+        const radioButtons: HTMLInputElement[] = Array.from(this.form.querySelectorAll(".radioButtons label input"))
+        const id: number = idCounter.assignIdCounter()
+        let image: File | null = this.form.querySelector('input[type="file"]').files[0]
+        let status: ReadingStatus;
+
+        if (radioButtons[0].checked) {
+            status = ReadingStatus.NotStarted
+        }
+        else if (radioButtons[1].checked) {
+            status = ReadingStatus.Reading
+        }
+        else
+            status = ReadingStatus.Finished
+
+        return { title, author, pageNum, status, id, image }
+    },
+    openAddBookModal() {
+        if (this.modal.hasChildNodes()) {
+            this.modal.firstChild.replaceWith(this.form)
+        }
+        else
+            modal.appendChild(this.form)
+
+        modal.showModal()
+    },
+    eraseInput(){
+        this.form.querySelector("#Title").value = ""
+        this.form.querySelector("#Author").value = ""
+        this.form.querySelector("#PageNumber").value = ""
+        const radioButtons: HTMLInputElement[] = Array.from(this.form.querySelectorAll(".radioButtons label input"))
+        this.form.querySelector(".filePickerLabel").dataset.imageName = ""
+        radioButtons.forEach(radioButton=>{
+            radioButton.checked = false
+        })
+        this.form.querySelector('input[type="file"]').fileList = ""
+    }
+}
+
+// const editBookModal: EditBookModal = {
+//     modal: modal,
+//     form: null,
+//     inputData: null,
+//     changeBooks(updatedBook: Book, books: Book[]) {
+//         return books.map(book => {
+//             if (book.id === updatedBook.id) {
+//                 return updatedBook
+//             }
+//             else
+//                 return book
+//         })
+//     },
+//     setBooks(newBooks: Book[], books: Books) {
+//         books.setBooks(newBooks)
+//     },
+//     getInputData() {
+//         const title: string = this.form.querySelector("#Title").value
+//         const author: string = this.form.querySelector("#Author").value
+//         const pageNum: number = Number(this.form.querySelector("#PageNumber").value)
+//         const radioButtons: HTMLInputElement[] = Array.from(this.form.querySelectorAll(".radioButtons label input"))
+//         const id: number = Number(this.form.dataset.bookId)
+//         const image: string | null = null
+//         let status: ReadingStatus;
+
+//         if (radioButtons[0].checked) {
+//             status = ReadingStatus.NotStarted
+//         }
+//         else if (radioButtons[1].checked) {
+//             status = ReadingStatus.Reading
+//         }
+//         else
+//             status = ReadingStatus.Finished
+
+//         return { title, author, pageNum, status, id, image }
+//     },
+//     createForm() {
+//         const editBookModal = document.createElement('form')
+//         editBookModal.method = "dialog"
+//         editBookModal.className = "editBookModal"
+//         const labelNames: string[] = ['Title', 'Author', 'PageNumber']
+
+//         for (let index = 0; index < 3; index++) {
+//             const para = document.createElement('p')
+//             const label = document.createElement('label')
+//             label.textContent = labelNames[index];
+//             label.htmlFor = labelNames[index];
+//             let input
+//             if (index === 2) {
+//                 input = document.createElement('input')
+//                 input.type = "number"
+//             }
+//             else input = document.createElement('input')
+//             input.id = labelNames[index]
+
+//             para.appendChild(label)
+//             para.appendChild(input)
+//             editBookModal.appendChild(para)
+//         }
+
+//         // Create radio buttons setting reading status
+//         const radioButtons = document.createElement('div')
+//         radioButtons.className = "radioButtons"
+//         editBookModal.appendChild(radioButtons)
+//         const radioButtonLabels = ["Haven't Started", "Reading Now", "Finished"]
+
+//         for (let index = 0; index < 3; index++) {
+//             const label = document.createElement('label')
+//             label.textContent = radioButtonLabels[index]
+//             const radioButton = document.createElement('input')
+//             radioButton.type = "radio";
+//             radioButton.name = "radio"
+//             const span = document.createElement('span')
+
+//             radioButtons.appendChild(label)
+//             label.appendChild(radioButton)
+//             label.appendChild(span)
+//         }
+
+//         const buttons = document.createElement('div')
+//         buttons.className = 'buttons'
+
+//         const okButton = document.createElement('button')
+//         okButton.textContent = "ok"
+//         okButton.className = "okButton"
+//         const cancelButton = document.createElement('button')
+//         cancelButton.className = "cancelButton"
+//         cancelButton.textContent = "Cancel"
+
+//         buttons.appendChild(okButton)
+//         buttons.appendChild(cancelButton)
+//         editBookModal.appendChild(buttons)
+
+//         return editBookModal
+//     },
+//     openEditBookModal(book: Book) {
+//         if (this.modal.hasChildNodes()) {
+//             this.modal.firstChild?.replaceWith(this.form)
+//         }
+//         else
+//             modal.appendChild(this.form)
+
+//         this.form.dataset.bookId = book.id
+//         this.form.querySelector("#Title").value = book.title
+//         this.form.querySelector("#Author").value = book.author
+//         this.form.querySelector("#PageNumber").value = book.pageNum
+//         this.form.querySelector("button").addEventListener("click", () => {
+//             const inputData = this.getInputData()
+//             const newBooks = this.changeBooks(inputData, books.books)
+//             books.setBooks(newBooks)
+//         })
+
+//         const radioButtons: HTMLInputElement[] = Array.from(this.form.querySelectorAll(".radioButtons label input"))
+//         if (book.status === ReadingStatus.NotStarted) {
+//             radioButtons[0].checked = true
+//         }
+//         else if (book.status === ReadingStatus.Reading) {
+//             radioButtons[1].checked = true
+//         }
+//         else
+//             radioButtons[2].checked = true
+//         modal.showModal()
+//     }
+// }
+
+const viewBookModal: ViewBookModal = {
+    modal: modal,
+    form: ViewBookModal(),
+    seeBookInfo(book: Book) {
+        if (this.modal.hasChildNodes()) {
+            this.modal.firstChild?.replaceWith(this.form)
+        }
+        else
+            modal.appendChild(this.form)
+
+        this.form.children[0].textContent = book.title
+        this.form.children[1].textContent = 'Author: ' + book.author
+        this.form.children[2].textContent = `${book.pageNum} pages`
+        this.form.children[3].textContent = 'Status: ' + (book.status === ReadingStatus.NotStarted ? "Haven't read yet" : book.status === ReadingStatus.Reading ? "Reading Now" : "Finished")
+
+        modal.showModal()
     }
 }
 
@@ -255,63 +412,24 @@ function Book(title: string, pageNum: number, author: string, image: string | nu
     this.id = idCounter.assignIdCounter()
 }
 
-// Book.prototype.setValues = function (newValues: Book) {
-//     this.title = newValues.title
-//     this.pageNum = newValues.pageNum
-//     this.author = newValues.author
-//     this.image = newValues.image
-//     this.status = newValues.status
-// }
-
-
-function createEditBookModal() {
-
-    const editBookModal = document.createElement('form')
-    editBookModal.method = "dialog"
-    editBookModal.className = "editBookModal"
-    const labelNames: string[] = ['Title', 'Author', 'Page Number', 'Status']
-
-    for (let index = 0; index < 4; index++) {
-        const para = document.createElement('p')
-        const label = document.createElement('label')
-        label.textContent = labelNames[index];
-        label.htmlFor = labelNames[index];
-        const input = document.createElement('input')
-        input.id = labelNames[index]
-
-        para.appendChild(label)
-        para.appendChild(input)
-        editBookModal.appendChild(para)
-    }
-
-    const buttons = document.createElement('div')
-    buttons.className = 'buttons'
-
-    const okButton = document.createElement('button')
-    okButton.textContent = "Ok"
-    okButton.className = "okButton"
-    const cancelButton = document.createElement('button')
-    cancelButton.className = "cancelButton"
-    cancelButton.textContent = "Cancel"
-
-    buttons.appendChild(okButton)
-    buttons.appendChild(cancelButton)
-    editBookModal.appendChild(buttons)
-
-    return editBookModal
-}
-
 function renderBooks(books: Book[], viewBookModal: ViewBookModal) {
     const booksContainer = document.querySelector('.booksContainer')!
+    booksContainer.textContent = ""
 
     books.forEach(book => {
         const bookImage = document.createElement("img")
         bookImage.className = "bookImage"
-        bookImage.src = book.image || "./assets/bookcover.jpg"
+        if (book.image) {
+            bookImage.src = URL.createObjectURL(book.image);
+            bookImage.onload = () => {
+                URL.revokeObjectURL(bookImage.src);
+            };
+        }
+        else bookImage.src ="./assets/bookcover.jpg"
         bookImage.dataset.bookId = book.id.toString()
         bookImage.addEventListener("click", (e) => {
-            const bookInfo = findBook(e)!
-            viewBookModal.seeBookInfo?.(bookInfo)
+            const bookInfo = bookManager.findBook(e)!
+            viewBookModal.seeBookInfo(bookInfo)
         })
         booksContainer.appendChild(bookImage)
     })
@@ -323,32 +441,15 @@ function cancelModalOutside(e: Event) {
     }
 }
 
-function openEditBookModal(editBookModal: HTMLFormElement, modal: HTMLDialogElement) {
-    if (modal.hasChildNodes()) {
-        modal.firstChild?.replaceWith(editBookModal)
-    }
-    else
-        modal.appendChild(editBookModal)
-    modal.showModal
-}
-
-function fillEditBookModal() {
-
-}
-
-function findBook(e: Event) {
-    // Turn the string dataset value to a number
-    const bookId = +(e.target as HTMLElement).dataset.bookId!
-    return books.books.find(book => book.id === bookId)
-}
-
 function initialize() {
     modal.addEventListener("click", cancelModalOutside)
 
-    viewBookModal.form = viewBookModal.createForm()
-    editBookModal.form = editBookModal.createForm()
+    renderBooks(bookManager.books, viewBookModal)
 
-    renderBooks(books.books, viewBookModal)
+    const addButton = document.querySelector('.addButton')
+    addButton?.addEventListener("click", () => {
+        addBookModal.openAddBookModal()
+    })
 }
 
 initialize()
