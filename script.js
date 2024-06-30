@@ -10,6 +10,7 @@ var __spreadArray = (this && this.__spreadArray) || function (to, from, pack) {
 var modal = document.querySelector('dialog');
 modal.addEventListener("close", function () {
     addBookModal.eraseInput();
+    editBookModal.eraseInput();
 });
 var ReadingStatus;
 (function (ReadingStatus) {
@@ -72,8 +73,7 @@ var BookInfoSection = function () {
     }
     return fragment;
 };
-var Buttons = function (firstName, secondName, callBack) {
-    if (callBack === void 0) { callBack = null; }
+var Buttons = function (firstName, callBack) {
     var buttons = document.createElement('div');
     buttons.className = 'buttons';
     var firstButton = document.createElement('button');
@@ -81,7 +81,7 @@ var Buttons = function (firstName, secondName, callBack) {
     if (callBack)
         firstButton.addEventListener('click', callBack);
     var secondButton = document.createElement('button');
-    secondButton.textContent = secondName;
+    secondButton.textContent = "Close";
     buttons.appendChild(firstButton);
     buttons.appendChild(secondButton);
     return buttons;
@@ -99,10 +99,18 @@ var FilePicker = function () {
     });
     return filePickerLabel;
 };
-var ViewBookModal = function () {
+var ViewBookModal = function (firstButtonName, firstButtonCallBack) {
     var dialogForm = DialogForm();
     dialogForm.appendChild(BookInfoSection());
-    dialogForm.appendChild(Buttons("Edit", "Cancel"));
+    dialogForm.appendChild(Buttons(firstButtonName, firstButtonCallBack));
+    return dialogForm;
+};
+var BookModal = function (firstButtonName, firstButtonCallBack) {
+    var dialogForm = DialogForm();
+    dialogForm.appendChild(InputSection());
+    dialogForm.appendChild(FilePicker());
+    dialogForm.appendChild(RadioButtons());
+    dialogForm.appendChild(Buttons(firstButtonName, firstButtonCallBack));
     return dialogForm;
 };
 var InputBookModal = function () {
@@ -110,10 +118,22 @@ var InputBookModal = function () {
     dialogForm.appendChild(InputSection());
     dialogForm.appendChild(FilePicker());
     dialogForm.appendChild(RadioButtons());
-    dialogForm.appendChild(Buttons("Finish", "Cancel", function () {
+    dialogForm.appendChild(Buttons("Finish", function () {
         var book = addBookModal.getInput();
         var books = bookManager.updateBooks(book);
         bookManager.setBooks(books);
+        renderBooks(bookManager.books, viewBookModal);
+    }));
+    return dialogForm;
+};
+var EditBookModal = function () {
+    var dialogForm = DialogForm();
+    dialogForm.appendChild(InputSection());
+    dialogForm.appendChild(FilePicker());
+    dialogForm.appendChild(RadioButtons());
+    dialogForm.appendChild(Buttons("Finish", function () {
+        var book = editBookModal.getInput();
+        bookManager.editBooks(book);
         renderBooks(bookManager.books, viewBookModal);
     }));
     return dialogForm;
@@ -151,17 +171,33 @@ var bookManager = {
     getCurrentBook: function () {
         return this.currentBook;
     },
+    editBooks: function (newBook) {
+        var newBooks = this.books.map(function (book) {
+            if (newBook.id === book.id) {
+                return newBook;
+            }
+            else
+                return book;
+        });
+        this.books = __spreadArray([], newBooks, true);
+    }
 };
+function addBook() {
+    var book = addBookModal.getInput();
+    var books = bookManager.updateBooks(book);
+    bookManager.setBooks(books);
+    renderBooks(bookManager.books, viewBookModal);
+}
 var addBookModal = {
     modal: modal,
-    form: InputBookModal(),
+    form: BookModal("Finish", addBook),
     getInput: function () {
         var title = this.form.querySelector("#Title").value;
         var author = this.form.querySelector("#Author").value;
         var pageNum = Number(this.form.querySelector("#PageNumber").value);
         var radioButtons = Array.from(this.form.querySelectorAll(".radioButtons label input"));
         var id = idCounter.assignIdCounter();
-        var image = this.form.querySelector('input[type="file"]').files[0];
+        var image = this.form.querySelector('input[type="file"]').files[0] || null;
         var status;
         if (radioButtons[0].checked) {
             status = ReadingStatus.NotStarted;
@@ -190,123 +226,82 @@ var addBookModal = {
         radioButtons.forEach(function (radioButton) {
             radioButton.checked = false;
         });
-        this.form.querySelector('input[type="file"]').fileList = "";
+        this.form.querySelector('input[type="file"]').files[0] = "";
     }
 };
-// const editBookModal: EditBookModal = {
-//     modal: modal,
-//     form: null,
-//     inputData: null,
-//     changeBooks(updatedBook: Book, books: Book[]) {
-//         return books.map(book => {
-//             if (book.id === updatedBook.id) {
-//                 return updatedBook
-//             }
-//             else
-//                 return book
-//         })
-//     },
-//     setBooks(newBooks: Book[], books: Books) {
-//         books.setBooks(newBooks)
-//     },
-//     getInputData() {
-//         const title: string = this.form.querySelector("#Title").value
-//         const author: string = this.form.querySelector("#Author").value
-//         const pageNum: number = Number(this.form.querySelector("#PageNumber").value)
-//         const radioButtons: HTMLInputElement[] = Array.from(this.form.querySelectorAll(".radioButtons label input"))
-//         const id: number = Number(this.form.dataset.bookId)
-//         const image: string | null = null
-//         let status: ReadingStatus;
-//         if (radioButtons[0].checked) {
-//             status = ReadingStatus.NotStarted
-//         }
-//         else if (radioButtons[1].checked) {
-//             status = ReadingStatus.Reading
-//         }
-//         else
-//             status = ReadingStatus.Finished
-//         return { title, author, pageNum, status, id, image }
-//     },
-//     createForm() {
-//         const editBookModal = document.createElement('form')
-//         editBookModal.method = "dialog"
-//         editBookModal.className = "editBookModal"
-//         const labelNames: string[] = ['Title', 'Author', 'PageNumber']
-//         for (let index = 0; index < 3; index++) {
-//             const para = document.createElement('p')
-//             const label = document.createElement('label')
-//             label.textContent = labelNames[index];
-//             label.htmlFor = labelNames[index];
-//             let input
-//             if (index === 2) {
-//                 input = document.createElement('input')
-//                 input.type = "number"
-//             }
-//             else input = document.createElement('input')
-//             input.id = labelNames[index]
-//             para.appendChild(label)
-//             para.appendChild(input)
-//             editBookModal.appendChild(para)
-//         }
-//         // Create radio buttons setting reading status
-//         const radioButtons = document.createElement('div')
-//         radioButtons.className = "radioButtons"
-//         editBookModal.appendChild(radioButtons)
-//         const radioButtonLabels = ["Haven't Started", "Reading Now", "Finished"]
-//         for (let index = 0; index < 3; index++) {
-//             const label = document.createElement('label')
-//             label.textContent = radioButtonLabels[index]
-//             const radioButton = document.createElement('input')
-//             radioButton.type = "radio";
-//             radioButton.name = "radio"
-//             const span = document.createElement('span')
-//             radioButtons.appendChild(label)
-//             label.appendChild(radioButton)
-//             label.appendChild(span)
-//         }
-//         const buttons = document.createElement('div')
-//         buttons.className = 'buttons'
-//         const okButton = document.createElement('button')
-//         okButton.textContent = "ok"
-//         okButton.className = "okButton"
-//         const cancelButton = document.createElement('button')
-//         cancelButton.className = "cancelButton"
-//         cancelButton.textContent = "Cancel"
-//         buttons.appendChild(okButton)
-//         buttons.appendChild(cancelButton)
-//         editBookModal.appendChild(buttons)
-//         return editBookModal
-//     },
-//     openEditBookModal(book: Book) {
-//         if (this.modal.hasChildNodes()) {
-//             this.modal.firstChild?.replaceWith(this.form)
-//         }
-//         else
-//             modal.appendChild(this.form)
-//         this.form.dataset.bookId = book.id
-//         this.form.querySelector("#Title").value = book.title
-//         this.form.querySelector("#Author").value = book.author
-//         this.form.querySelector("#PageNumber").value = book.pageNum
-//         this.form.querySelector("button").addEventListener("click", () => {
-//             const inputData = this.getInputData()
-//             const newBooks = this.changeBooks(inputData, books.books)
-//             books.setBooks(newBooks)
-//         })
-//         const radioButtons: HTMLInputElement[] = Array.from(this.form.querySelectorAll(".radioButtons label input"))
-//         if (book.status === ReadingStatus.NotStarted) {
-//             radioButtons[0].checked = true
-//         }
-//         else if (book.status === ReadingStatus.Reading) {
-//             radioButtons[1].checked = true
-//         }
-//         else
-//             radioButtons[2].checked = true
-//         modal.showModal()
-//     }
-// }
+function editBook() {
+    var book = editBookModal.getInput();
+    bookManager.editBooks(book);
+    renderBooks(bookManager.books, viewBookModal);
+}
+var editBookModal = {
+    modal: modal,
+    form: BookModal("Finish", editBook),
+    currentImage: null,
+    getInput: function () {
+        var title = this.form.querySelector("#Title").value;
+        var author = this.form.querySelector("#Author").value;
+        var pageNum = Number(this.form.querySelector("#PageNumber").value);
+        var radioButtons = Array.from(this.form.querySelectorAll(".radioButtons label input"));
+        var id = Number(this.form.dataset.bookId);
+        var image = this.form.querySelector('input[type="file"]').files[0] || this.currentImage;
+        var status;
+        if (radioButtons[0].checked) {
+            status = ReadingStatus.NotStarted;
+        }
+        else if (radioButtons[1].checked) {
+            status = ReadingStatus.Reading;
+        }
+        else
+            status = ReadingStatus.Finished;
+        return { title: title, author: author, pageNum: pageNum, status: status, id: id, image: image };
+    },
+    openEditBookModal: function (book) {
+        var _a;
+        if (this.modal.hasChildNodes()) {
+            (_a = this.modal.firstChild) === null || _a === void 0 ? void 0 : _a.replaceWith(this.form);
+        }
+        else
+            modal.appendChild(this.form);
+        this.form.dataset.bookId = book.id;
+        this.form.querySelector("#Title").value = book.title;
+        this.form.querySelector("#Author").value = book.author;
+        this.form.querySelector("#PageNumber").value = book.pageNum;
+        this.currentImage = book.image;
+        if (book.image === null)
+            this.form.querySelector('.filePickerLabel').dataset.imageName = "";
+        else
+            this.form.querySelector('.filePickerLabel').dataset.imageName = book.image.name;
+        var radioButtons = Array.from(this.form.querySelectorAll(".radioButtons label input"));
+        if (book.status === ReadingStatus.NotStarted) {
+            radioButtons[0].checked = true;
+        }
+        else if (book.status === ReadingStatus.Reading) {
+            radioButtons[1].checked = true;
+        }
+        else
+            radioButtons[2].checked = true;
+        modal.showModal();
+    },
+    eraseInput: function () {
+        this.form.querySelector("#Title").value = "";
+        this.form.querySelector("#Author").value = "";
+        this.form.querySelector("#PageNumber").value = "";
+        var radioButtons = Array.from(this.form.querySelectorAll(".radioButtons label input"));
+        this.form.querySelector(".filePickerLabel").dataset.imageName = "";
+        radioButtons.forEach(function (radioButton) {
+            radioButton.checked = false;
+        });
+        this.form.querySelector('input[type="file"]').files[0] = "";
+    }
+};
+function openEditBookModal() {
+    var book = bookManager.getCurrentBook();
+    editBookModal.openEditBookModal(book);
+}
 var viewBookModal = {
     modal: modal,
-    form: ViewBookModal(),
+    form: ViewBookModal("Edit", openEditBookModal),
     seeBookInfo: function (book) {
         var _a;
         if (this.modal.hasChildNodes()) {
@@ -314,6 +309,7 @@ var viewBookModal = {
         }
         else
             modal.appendChild(this.form);
+        this.form.dataset.bookId = book.id;
         this.form.children[0].textContent = book.title;
         this.form.children[1].textContent = 'Author: ' + book.author;
         this.form.children[2].textContent = "".concat(book.pageNum, " pages");
@@ -346,6 +342,7 @@ function renderBooks(books, viewBookModal) {
         bookImage.dataset.bookId = book.id.toString();
         bookImage.addEventListener("click", function (e) {
             var bookInfo = bookManager.findBook(e);
+            bookManager.setCurrentBook(bookInfo);
             viewBookModal.seeBookInfo(bookInfo);
         });
         booksContainer.appendChild(bookImage);
