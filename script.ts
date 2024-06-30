@@ -148,7 +148,7 @@ const FilePicker = () => {
     const filePickerLabel = document.createElement("label")
     filePickerLabel.textContent = "Upload an Image"
     filePickerLabel.appendChild(filePicker)
-    filePickerLabel.className = "filePickerLabel"
+    filePickerLabel.className = 'filePickerLabel'
 
     filePicker.addEventListener("change", (e) => {
         const imageName = (e.currentTarget! as HTMLInputElement).files![0].name
